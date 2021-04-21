@@ -1,0 +1,328 @@
+package com.root.onvif.controller;
+
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.root.onvif.mbg.model.TbDev;
+import com.root.onvif.model.OnvifDeviceInfo;
+import com.root.onvif.mysql.DevService;
+import com.root.onvif.service.CapabilitiesService;
+import com.root.onvif.thread.AsyncService;
+import com.root.onvif.util.DiscoveryUtils;
+import com.root.onvif.util.ResultCode;
+import com.root.onvif.util.ResultUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import javax.annotation.PostConstruct;
+import java.net.InetAddress;
+import java.util.*;
+import java.util.zip.DeflaterOutputStream;
+
+@RestController
+@RequestMapping("/onvif")
+@CrossOrigin
+public class DiscoveryController {
+
+    public static LinkedHashMap<String,OnvifDeviceInfo> deviceInfoList;//存放onvif设备信息
+    @Autowired
+    DiscoveryUtils discoveryUtils;
+    @Autowired
+    AsyncService asyncService;
+    @Autowired
+    DevService devService;//记录设备
+    @PostConstruct
+    private void init() {
+//        asyncService.updateDevInfo();
+//        List<InetAddress> localIP = discoveryUtils.getLocalIP();
+//        for(int i = 0; i < localIP.size(); i++) {
+//            discoveryUtils.discovery(localIP.get(i),10);
+//        }
+        loadDev();
+        getLocalIP(true);
+    }
+
+    //#region 加载数据库设备
+    private void loadDev() {
+        deviceInfoList = new LinkedHashMap<String,OnvifDeviceInfo>();
+        List<TbDev> tbDevs = devService.listAll();
+        if(tbDevs == null || tbDevs.size() <= 0) {
+            return;
+        }
+        for (TbDev tbDev : tbDevs) {
+            OnvifDeviceInfo onvifDeviceInfo = new OnvifDeviceInfo();
+            onvifDeviceInfo.setIp(tbDev.getIp());
+            onvifDeviceInfo.setPort(tbDev.getPort());
+            onvifDeviceInfo.setUsername(tbDev.getUsername());
+            onvifDeviceInfo.setPassword(tbDev.getPassword());
+            onvifDeviceInfo.setOnvifAddress(tbDev.getOnvifAddress());
+            onvifDeviceInfo.setMediaUrl(tbDev.getMediaUrl());
+            onvifDeviceInfo.setImagingUrl(tbDev.getImagingUrl());
+            onvifDeviceInfo.setEventsUrl(tbDev.getEventsUrl());
+            onvifDeviceInfo.setDeviceUrl(tbDev.getDeviceUrl());
+            onvifDeviceInfo.setPtzUrl(tbDev.getPtzUrl());
+            onvifDeviceInfo.setAnalyticsUrl(tbDev.getAnalyticsUrl());
+
+            deviceInfoList.put(tbDev.getIp(),onvifDeviceInfo);
+        }
+    }
+    //#endregion
+    //#region 本地ip段
+
+    /**
+     * 获取本地ip段
+     * @param update 是否重新获取
+     * @return
+     */
+    @RequestMapping(value = "/getLocalIP", method = RequestMethod.GET)
+    public JSONObject getLocalIP(@RequestParam(value = "update",required = false,defaultValue = "false") Boolean update) {
+        if(update) {//重新获取本地ip段
+            discoveryUtils.addressList.clear();
+        }
+        if(discoveryUtils.addressList.size() > 0) {
+            return ResultUtil.success(discoveryUtils.addressList);
+        }
+        discoveryUtils.getLocalIP();
+        if(discoveryUtils.addressList.size() > 0) {
+            return ResultUtil.success(discoveryUtils.addressList);
+        }
+        return ResultUtil.error(ResultCode.GET_LOCAL_IP_SEGMENT_FAILED);
+    }
+    //#endregion
+
+    //#region 搜索设备
+
+    /**
+     * 根据ip段搜索设备
+     * @param ipSegment ip
+     * @return
+     */
+    @RequestMapping(value = "getDevByIpSegment",method = RequestMethod.GET)
+    public JSONObject getDevByIpSegment(@RequestParam(value = "ipSegment") String ipSegment) {
+        for (InetAddress inetAddress:
+        discoveryUtils.addressList) {
+            if(inetAddress.getHostAddress().equals(ipSegment)) {
+                List<Object> discovery = discoveryUtils.discovery(inetAddress, 15);
+                if(discovery.size() > 0) {
+                    for(Object object : discovery) {
+                        String url = ((String[])object)[0];
+                        String ip = ((String[])object)[1];
+
+                        int startIndex = ip.indexOf(":");
+                        String strIP = "";
+                        int port = 80;
+                        if(startIndex > 0) {//ip加端口
+                            strIP = ip.substring(0,startIndex);
+                            port = Integer.parseInt(ip.substring(startIndex + 1,ip.length()));
+                        } else {
+                            strIP = ip;
+                            port = 80;
+                        }
+                        OnvifDeviceInfo onvifDeviceInfo = new OnvifDeviceInfo();
+                        onvifDeviceInfo.setIp(strIP);
+                        onvifDeviceInfo.setPort(port);
+                        onvifDeviceInfo.setOnvifAddress(url);
+                        if(deviceInfoList.get(ip) == null) {
+                            deviceInfoList.put(strIP,onvifDeviceInfo);
+                        }
+                    }
+                    return ResultUtil.success(discovery);
+                }
+                else {
+                    return ResultUtil.error(ResultCode.NO_DEVICE_FOUND);
+                }
+            }
+        }
+        return ResultUtil.error(ResultCode.NO_SUCE_IP_SEGMENT);
+    }
+    //#endregion
+
+    /**
+     * 根据ip获取设备信息
+     * @param ip
+     * @param username
+     * @param password
+     * @return
+     */
+    @RequestMapping(value = "/getDevInfo",method = RequestMethod.GET)
+    public JSONObject getDevInfo(@RequestParam(value = "ip",required = true) String ip,
+                                  @RequestParam(value = "port",required = false,defaultValue = "80") int port,
+                                  @RequestParam(value = "username",required = false) String username,
+                                  @RequestParam(value = "password", required = false) String password) {
+
+        OnvifDeviceInfo onvifDeviceInfo = getDevInfoFromList(ip, port, username, password);
+
+        try {
+            Map<String, String> deviceInfomation = CapabilitiesService.getDeviceInfomation(onvifDeviceInfo);
+            return ResultUtil.success(deviceInfomation);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return ResultUtil.error();
+
+    }
+
+
+    /**
+     * 获取能力集url
+     * @param ip
+     * @param port
+     * @param username
+     * @param password
+     * @return
+     */
+    @RequestMapping(value = "/getCapabilities",method = RequestMethod.GET)
+    public JSONObject getCapabilities(@RequestParam(value = "ip",required = true) String ip,
+                                      @RequestParam(value = "port",required = false,defaultValue = "80") int port,
+                                      @RequestParam(value = "username",required = false) String username,
+                                      @RequestParam(value = "password", required = false) String password) {
+        OnvifDeviceInfo onvifDeviceInfo = getDevInfoFromList(ip, port, username, password);
+
+        try {
+            OnvifDeviceInfo capabilities = CapabilitiesService.getCapabilities(onvifDeviceInfo);
+            updateMysqlDev(capabilities);
+            return ResultUtil.success(capabilities);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResultUtil.success();
+    }
+
+    //#region media
+    @RequestMapping(value = "/getMediaProfiles",method = RequestMethod.GET)
+    public JSONObject getMediaProfiles(@RequestParam(value = "ip",required = true) String ip,
+                                        @RequestParam(value = "port",required = false,defaultValue = "80") int port,
+                                        @RequestParam(value = "username",required = false) String username,
+                                        @RequestParam(value = "password", required = false) String password) {
+
+        OnvifDeviceInfo onvifDeviceInfo = getDevInfoFromList(ip, port, username, password);
+        try {
+            Map<String,String> mediaProfiles = CapabilitiesService.getMediaProfiles(onvifDeviceInfo);
+            if(mediaProfiles == null) return ResultUtil.error();
+
+            JSONArray jsonArray = new JSONArray();
+            Iterator entries = mediaProfiles.entrySet().iterator();
+            while(entries.hasNext()){
+                Map.Entry entry = (Map.Entry) entries.next();
+                String key = (String) entry.getKey();
+                String value = (String)entry.getValue();
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("token",key);
+                jsonObject.put("name",value);
+                jsonArray.add(jsonObject);
+            }
+            return ResultUtil.success(jsonArray);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResultUtil.error();
+    }
+
+
+    @RequestMapping(value = "/getSnapshotUri", method = RequestMethod.GET)
+    public JSONObject getSnapshotUri(@RequestParam(value = "ip",required = true) String ip) {
+        OnvifDeviceInfo onvifDeviceInfo = getDevInfoFromList(ip, 80, null, null);
+
+        try {
+            Map<String,String> mediaProfiles = CapabilitiesService.getMediaProfiles(onvifDeviceInfo);
+            if(mediaProfiles == null) return ResultUtil.error();
+
+            JSONArray jsonArray = new JSONArray();
+            Iterator entries = mediaProfiles.entrySet().iterator();
+            while(entries.hasNext()){
+                Map.Entry entry = (Map.Entry) entries.next();
+                String key = (String) entry.getKey();
+                String value = (String)entry.getValue();
+
+                String snapshotUri = CapabilitiesService.getSnapshotUri(onvifDeviceInfo, key);
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("token",key);
+                jsonObject.put("name",value);
+                jsonObject.put("uri",snapshotUri);
+                jsonArray.add(jsonObject);
+            }
+            return ResultUtil.success(jsonArray);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return ResultUtil.error();
+    }
+
+    //#endregion
+
+    //#region ptz
+
+    /**
+     * 云台控制
+     * @param ip 设备ip
+     * @param command 0-停止 1-上 2-下 3-左 4-右 5-左上 6-左下 7-右上 8-右下 9-镜头拉近 10-镜头推远 11-光圈放大 12-光圈缩小 13-焦距增加 14-焦距减小
+     * @param speed 速度
+     * @return
+     */
+    @RequestMapping(value = "/getSnapshotUri", method = RequestMethod.GET)
+    public JSONObject ptzControl(@RequestParam(value = "ip",required = true) String ip,
+                                 @RequestParam(value = "command",required = true) int command,
+                                 @RequestParam(value = "speed",required = false) int speed) {
+        OnvifDeviceInfo onvifDeviceInfo = deviceInfoList.get(ip);
+        if(onvifDeviceInfo == null) {
+            return ResultUtil.error();
+        }
+
+        CapabilitiesService.
+
+    }
+    //#endregion
+    /**
+     * 从设备列表查找设备，没有则创建
+     * @param ip
+     * @param port
+     * @param username
+     * @param password
+     * @return
+     */
+    private OnvifDeviceInfo getDevInfoFromList(String ip, int port, String username, String password) {
+        OnvifDeviceInfo onvifDeviceInfo = deviceInfoList.get(ip);
+
+        if(onvifDeviceInfo == null) {//设备列表没有设备
+            onvifDeviceInfo = new OnvifDeviceInfo();
+        }
+        //用户名密码
+        if(username != null) {
+            onvifDeviceInfo.setUsername(username);
+        }
+        if(password != null) {
+            onvifDeviceInfo.setPassword(password);
+        }
+
+        //端口
+        if(onvifDeviceInfo.getPort() == 0) {
+            onvifDeviceInfo.setPort(port);
+        }
+        onvifDeviceInfo.setIp(ip);
+        if(onvifDeviceInfo.getOnvifAddress().length() == 0) {
+            onvifDeviceInfo.setOnvifAddress("http://" + ip + ":" + onvifDeviceInfo.getPort()+ "/onvif/device_service");
+        }
+
+        return onvifDeviceInfo;
+    }
+
+    private void updateMysqlDev(OnvifDeviceInfo onvifDeviceInfo) {
+        TbDev tbDev = new TbDev();
+        tbDev.setIp(onvifDeviceInfo.getIp());
+        tbDev.setPort(onvifDeviceInfo.getPort());
+        tbDev.setUsername(onvifDeviceInfo.getUsername());
+        tbDev.setPassword(onvifDeviceInfo.getPassword());
+        tbDev.setOnvifAddress(onvifDeviceInfo.getOnvifAddress());
+        tbDev.setMediaUrl(onvifDeviceInfo.getMediaUrl());
+        tbDev.setImagingUrl(onvifDeviceInfo.getImagingUrl());
+        tbDev.setEventsUrl(onvifDeviceInfo.getEventsUrl());
+        tbDev.setDeviceUrl(onvifDeviceInfo.getDeviceUrl());
+        tbDev.setPtzUrl(onvifDeviceInfo.getPtzUrl());
+        tbDev.setAnalyticsUrl(onvifDeviceInfo.getAnalyticsUrl());
+
+        int delete = devService.delete(tbDev.getIp());
+        int i = devService.create(tbDev);
+
+    }
+}

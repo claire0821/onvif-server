@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.root.onvif.mbg.mapper.TbDevMapper">
+  <resultMap id="BaseResultMap" type="com.root.onvif.mbg.model.TbDev">
+    <id column="ip" jdbcType="VARCHAR" property="ip" />
+    <result column="port" jdbcType="INTEGER" property="port" />
+    <result column="username" jdbcType="VARCHAR" property="username" />
+    <result column="password" jdbcType="VARCHAR" property="password" />
+    <result column="onvif_address" jdbcType="VARCHAR" property="onvifAddress" />
+    <result column="media_url" jdbcType="VARCHAR" property="mediaUrl" />
+    <result column="imaging_url" jdbcType="VARCHAR" property="imagingUrl" />
+    <result column="events_url" jdbcType="VARCHAR" property="eventsUrl" />
+    <result column="device_url" jdbcType="VARCHAR" property="deviceUrl" />
+    <result column="ptz_url" jdbcType="VARCHAR" property="ptzUrl" />
+    <result column="analytics_url" jdbcType="VARCHAR" property="analyticsUrl" />
+  </resultMap>
+  <sql id="Example_Where_Clause">
+    <where>
+      <foreach collection="oredCriteria" item="criteria" separator="or">
+        <if test="criteria.valid">
+          <trim prefix="(" prefixOverrides="and" suffix=")">
+            <foreach collection="criteria.criteria" item="criterion">
+              <choose>
+                <when test="criterion.noValue">
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue">
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue">
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue">
+                  and ${criterion.condition}
+                  <foreach close=")" collection="criterion.value" item="listItem" open="(" separator=",">
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause">
+    <where>
+      <foreach collection="example.oredCriteria" item="criteria" separator="or">
+        <if test="criteria.valid">
+          <trim prefix="(" prefixOverrides="and" suffix=")">
+            <foreach collection="criteria.criteria" item="criterion">
+              <choose>
+                <when test="criterion.noValue">
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue">
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue">
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue">
+                  and ${criterion.condition}
+                  <foreach close=")" collection="criterion.value" item="listItem" open="(" separator=",">
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List">
+    ip, port, username, password, onvif_address, media_url, imaging_url, events_url, 
+    device_url, ptz_url, analytics_url
+  </sql>
+  <select id="selectByExample" parameterType="com.root.onvif.mbg.model.TbDevExample" resultMap="BaseResultMap">
+    select
+    <if test="distinct">
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from tb_dev
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null">
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from tb_dev
+    where ip = #{ip,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+    delete from tb_dev
+    where ip = #{ip,jdbcType=VARCHAR}
+  </delete>
+  <delete id="deleteByExample" parameterType="com.root.onvif.mbg.model.TbDevExample">
+    delete from tb_dev
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="com.root.onvif.mbg.model.TbDev">
+    insert into tb_dev (ip, port, username, 
+      password, onvif_address, media_url, 
+      imaging_url, events_url, device_url, 
+      ptz_url, analytics_url)
+    values (#{ip,jdbcType=VARCHAR}, #{port,jdbcType=INTEGER}, #{username,jdbcType=VARCHAR}, 
+      #{password,jdbcType=VARCHAR}, #{onvifAddress,jdbcType=VARCHAR}, #{mediaUrl,jdbcType=VARCHAR}, 
+      #{imagingUrl,jdbcType=VARCHAR}, #{eventsUrl,jdbcType=VARCHAR}, #{deviceUrl,jdbcType=VARCHAR}, 
+      #{ptzUrl,jdbcType=VARCHAR}, #{analyticsUrl,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.root.onvif.mbg.model.TbDev">
+    insert into tb_dev
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="ip != null">
+        ip,
+      </if>
+      <if test="port != null">
+        port,
+      </if>
+      <if test="username != null">
+        username,
+      </if>
+      <if test="password != null">
+        password,
+      </if>
+      <if test="onvifAddress != null">
+        onvif_address,
+      </if>
+      <if test="mediaUrl != null">
+        media_url,
+      </if>
+      <if test="imagingUrl != null">
+        imaging_url,
+      </if>
+      <if test="eventsUrl != null">
+        events_url,
+      </if>
+      <if test="deviceUrl != null">
+        device_url,
+      </if>
+      <if test="ptzUrl != null">
+        ptz_url,
+      </if>
+      <if test="analyticsUrl != null">
+        analytics_url,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="ip != null">
+        #{ip,jdbcType=VARCHAR},
+      </if>
+      <if test="port != null">
+        #{port,jdbcType=INTEGER},
+      </if>
+      <if test="username != null">
+        #{username,jdbcType=VARCHAR},
+      </if>
+      <if test="password != null">
+        #{password,jdbcType=VARCHAR},
+      </if>
+      <if test="onvifAddress != null">
+        #{onvifAddress,jdbcType=VARCHAR},
+      </if>
+      <if test="mediaUrl != null">
+        #{mediaUrl,jdbcType=VARCHAR},
+      </if>
+      <if test="imagingUrl != null">
+        #{imagingUrl,jdbcType=VARCHAR},
+      </if>
+      <if test="eventsUrl != null">
+        #{eventsUrl,jdbcType=VARCHAR},
+      </if>
+      <if test="deviceUrl != null">
+        #{deviceUrl,jdbcType=VARCHAR},
+      </if>
+      <if test="ptzUrl != null">
+        #{ptzUrl,jdbcType=VARCHAR},
+      </if>
+      <if test="analyticsUrl != null">
+        #{analyticsUrl,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="com.root.onvif.mbg.model.TbDevExample" resultType="java.lang.Long">
+    select count(*) from tb_dev
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map">
+    update tb_dev
+    <set>
+      <if test="record.ip != null">
+        ip = #{record.ip,jdbcType=VARCHAR},
+      </if>
+      <if test="record.port != null">
+        port = #{record.port,jdbcType=INTEGER},
+      </if>
+      <if test="record.username != null">
+        username = #{record.username,jdbcType=VARCHAR},
+      </if>
+      <if test="record.password != null">
+        password = #{record.password,jdbcType=VARCHAR},
+      </if>
+      <if test="record.onvifAddress != null">
+        onvif_address = #{record.onvifAddress,jdbcType=VARCHAR},
+      </if>
+      <if test="record.mediaUrl != null">
+        media_url = #{record.mediaUrl,jdbcType=VARCHAR},
+      </if>
+      <if test="record.imagingUrl != null">
+        imaging_url = #{record.imagingUrl,jdbcType=VARCHAR},
+      </if>
+      <if test="record.eventsUrl != null">
+        events_url = #{record.eventsUrl,jdbcType=VARCHAR},
+      </if>
+      <if test="record.deviceUrl != null">
+        device_url = #{record.deviceUrl,jdbcType=VARCHAR},
+      </if>
+      <if test="record.ptzUrl != null">
+        ptz_url = #{record.ptzUrl,jdbcType=VARCHAR},
+      </if>
+      <if test="record.analyticsUrl != null">
+        analytics_url = #{record.analyticsUrl,jdbcType=VARCHAR},
+      </if>
+    </set>
+    <if test="_parameter != null">
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map">
+    update tb_dev
+    set ip = #{record.ip,jdbcType=VARCHAR},
+      port = #{record.port,jdbcType=INTEGER},
+      username = #{record.username,jdbcType=VARCHAR},
+      password = #{record.password,jdbcType=VARCHAR},
+      onvif_address = #{record.onvifAddress,jdbcType=VARCHAR},
+      media_url = #{record.mediaUrl,jdbcType=VARCHAR},
+      imaging_url = #{record.imagingUrl,jdbcType=VARCHAR},
+      events_url = #{record.eventsUrl,jdbcType=VARCHAR},
+      device_url = #{record.deviceUrl,jdbcType=VARCHAR},
+      ptz_url = #{record.ptzUrl,jdbcType=VARCHAR},
+      analytics_url = #{record.analyticsUrl,jdbcType=VARCHAR}
+    <if test="_parameter != null">
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="com.root.onvif.mbg.model.TbDev">
+    update tb_dev
+    <set>
+      <if test="port != null">
+        port = #{port,jdbcType=INTEGER},
+      </if>
+      <if test="username != null">
+        username = #{username,jdbcType=VARCHAR},
+      </if>
+      <if test="password != null">
+        password = #{password,jdbcType=VARCHAR},
+      </if>
+      <if test="onvifAddress != null">
+        onvif_address = #{onvifAddress,jdbcType=VARCHAR},
+      </if>
+      <if test="mediaUrl != null">
+        media_url = #{mediaUrl,jdbcType=VARCHAR},
+      </if>
+      <if test="imagingUrl != null">
+        imaging_url = #{imagingUrl,jdbcType=VARCHAR},
+      </if>
+      <if test="eventsUrl != null">
+        events_url = #{eventsUrl,jdbcType=VARCHAR},
+      </if>
+      <if test="deviceUrl != null">
+        device_url = #{deviceUrl,jdbcType=VARCHAR},
+      </if>
+      <if test="ptzUrl != null">
+        ptz_url = #{ptzUrl,jdbcType=VARCHAR},
+      </if>
+      <if test="analyticsUrl != null">
+        analytics_url = #{analyticsUrl,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where ip = #{ip,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.root.onvif.mbg.model.TbDev">
+    update tb_dev
+    set port = #{port,jdbcType=INTEGER},
+      username = #{username,jdbcType=VARCHAR},
+      password = #{password,jdbcType=VARCHAR},
+      onvif_address = #{onvifAddress,jdbcType=VARCHAR},
+      media_url = #{mediaUrl,jdbcType=VARCHAR},
+      imaging_url = #{imagingUrl,jdbcType=VARCHAR},
+      events_url = #{eventsUrl,jdbcType=VARCHAR},
+      device_url = #{deviceUrl,jdbcType=VARCHAR},
+      ptz_url = #{ptzUrl,jdbcType=VARCHAR},
+      analytics_url = #{analyticsUrl,jdbcType=VARCHAR}
+    where ip = #{ip,jdbcType=VARCHAR}
+  </update>
+</mapper>
