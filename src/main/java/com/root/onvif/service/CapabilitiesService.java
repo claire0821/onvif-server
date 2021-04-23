@@ -123,18 +123,77 @@ public class CapabilitiesService {
     }
 
     //#region 云台
-    private static String getContinuousMoveXml() {
-        return  "<s:Body>\n" +
-                "    <tptz:ContinuousMove>\n" +
-                "      <tptz:ProfileToken>prof0</tptz:ProfileToken>\n" +
-                "      <tptz:Velocity>\n" +
-                "        <tt:PanTilt x=\"XXX\" y=\"YYY\" />\n" +
-                "        <tt:Zoom x=\"ZZZ\" />\n" +
-                "      </tptz:Velocity>\n" +
-                "      TIMEOUT\n" +
-                "    </tptz:ContinuousMove>\n" +
-                "  </s:Body>\n" +
-                "</s:Envelope>";
+
+    /**
+     *
+     * @param command  0-停止 1-上 2-下 3-左 4-右 5-左上 6-左下 7-右上 8-右下 9-镜头拉近 10-镜头推远 11-光圈放大 12-光圈缩小 13-焦距增加 14-焦距减小
+     * @param profileToken
+     * @param speed 0-1
+     * @return
+     */
+    private static String getContinuousMoveXml(int command, String profileToken, float speed) {
+//        return  "<s:Body>\n" +
+//                "    <tptz:ContinuousMove>\n" +
+//                "      <tptz:ProfileToken>prof0</tptz:ProfileToken>\n" +
+//                "      <tptz:Velocity>\n" +
+//                "        <tt:PanTilt x=\"XXX\" y=\"YYY\" />\n" +
+//                "        <tt:Zoom x=\"ZZZ\" />\n" +
+//                "      </tptz:Velocity>\n" +
+//                "      TIMEOUT\n" +
+//                "    </tptz:ContinuousMove>\n" +
+//                "  </s:Body>\n" +
+//                "</s:Envelope>";
+
+        if(command == 0) {
+            return "<s:Body xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n" +
+                   "<Stop xmlns=\"http://www.onvif.org/ver20/ptz/wsdl\">" +
+                    "<ProfileToken>"+ profileToken +"</ProfileToken>\n" +
+                    "<PanTilt>true</PanTilt>" +
+                    "<Zoom>true</Zoom>\n" +
+                    "</Stop>\n" +
+                    "</s:Body>\n" +
+                    "</s:Envelope>";
+        } else if(command == 1 || command == 2) {
+            if(command == 2) {
+                speed = -speed;
+            }
+            return "<s:Body xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n" +
+                    "<ContinuousMove xmlns=\"http://www.onvif.org/ver20/ptz/wsdl\">\n" +
+                    "<ProfileToken>"+ profileToken +"</ProfileToken>\n" +
+                    "<Velocity>\n" +
+                    "<PanTilt x=\"0\" y=\"" + speed + "\" space=\"http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace\" xmlns=\"http://www.onvif.org/ver10/schema\"/>\n" +
+                    "</Velocity>\n" +
+                    "</ContinuousMove>\n" +
+                    "</s:Body>\n" +
+                    "</s:Envelope>";
+        } else if(command == 3 || command == 4) {
+            if(command == 3) {
+                speed = -speed;
+            }
+            return "<s:Body xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n" +
+                    "<ContinuousMove xmlns=\"http://www.onvif.org/ver20/ptz/wsdl\">\n" +
+                    "<ProfileToken>"+ profileToken +"</ProfileToken>\n" +
+                    "<Velocity>\n" +
+                    "<PanTilt x=\"" + speed +"\" y=\"0\" space=\"http://www.onvif.org/ver10/tptz/PanTiltSpaces/VelocityGenericSpace\" xmlns=\"http://www.onvif.org/ver10/schema\"/>\n" +
+                    "</Velocity>\n" +
+                    "</ContinuousMove>\n" +
+                    "</s:Body>\n" +
+                    "</s:Envelope>";
+        }
+        else if(command == 9 || command == 10) {
+            if(command == 10) {
+                speed = -speed;
+            }
+            return "<s:Body xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n" +
+                    "<ContinuousMove xmlns=\"http://www.onvif.org/ver20/ptz/wsdl\">\n" +
+                    "<ProfileToken>"+ profileToken +"</ProfileToken>\n" +
+                    "<Velocity><Zoom x=\"" + speed + "\" space=\"http://www.onvif.org/ver10/tptz/ZoomSpaces/VelocityGenericSpace\" xmlns=\"http://www.onvif.org/ver10/schema\"/></Velocity>\n" +
+                    "</ContinuousMove>\n" +
+                    "</s:Body>\n" +
+                    "</s:Envelope>";
+        }
+        return "";
+
     }
     //#endregion
     private static String getMediaProfilesXml(UsernameToken usernameToken) {
@@ -207,15 +266,15 @@ public class CapabilitiesService {
     }
 
     //#region 云台
-    public static void continuousMove(OnvifDeviceInfo onvifDeviceInfo) {
+    public static void continuousMove(OnvifDeviceInfo onvifDeviceInfo,int command, String profileToken, float speed) throws Exception {
         UsernameToken usernameToken = EncryptUtils.generate(onvifDeviceInfo.getUsername(), onvifDeviceInfo.getPassword());
 
         String head = getHead(usernameToken);
-        getContinuousMoveXml();
+        String body = getContinuousMoveXml(command, profileToken, speed);
 
-        String returnXmlContent = okHttpUtils.okHttp3XmlPost(onvifDeviceInfo.getMediaUrl(), getMediaProfilesXml(usernameToken));
+        System.out.println(head + body);
+        String returnXmlContent = okHttpUtils.okHttp3XmlPost(onvifDeviceInfo.getPtzUrl(), head + body);
         System.out.println(returnXmlContent);
-        return XMLUtils.parseMediaProfiles(returnXmlContent);
     }
     //#endregion
 }

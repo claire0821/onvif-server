@@ -260,17 +260,22 @@ public class DiscoveryController {
      * @param speed 速度
      * @return
      */
-    @RequestMapping(value = "/getSnapshotUri", method = RequestMethod.GET)
+    @RequestMapping(value = "/ptzControl", method = RequestMethod.GET)
     public JSONObject ptzControl(@RequestParam(value = "ip",required = true) String ip,
-                                 @RequestParam(value = "command",required = true) int command,
-                                 @RequestParam(value = "speed",required = false) int speed) {
+                                 @RequestParam(value = "command",required = true) Integer command,
+                                 @RequestParam(value = "speed",required = false,defaultValue = "0.5") Float speed,
+                                 @RequestParam(value = "profileToken",required = true) String profileToken) {
         OnvifDeviceInfo onvifDeviceInfo = deviceInfoList.get(ip);
         if(onvifDeviceInfo == null) {
             return ResultUtil.error();
         }
 
-        CapabilitiesService.
-
+        try {
+            CapabilitiesService.continuousMove(onvifDeviceInfo,command,profileToken, speed);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResultUtil.success();
     }
     //#endregion
     /**
