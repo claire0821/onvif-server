@@ -3,8 +3,12 @@ package com.root.onvif.util;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OkHttpUtils {
+
+    private static final Logger logger = LoggerFactory.getLogger(OkHttpUtils.class);
 
     public String okHttp3XmlPost(String url, String body) throws Exception {
 
@@ -19,7 +23,8 @@ public class OkHttpUtils {
         try {
             response = OkHttpClientSingleton.getInstance().newCall(request).execute();
         } catch (Exception e) {
-//            LOGGER.debug("连接[" + url + "]异常");
+            logger.error("连接[" + url + "]异常");
+            logger.error(e.toString());
             throw e;
         }
 

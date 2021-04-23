@@ -66,10 +66,22 @@ public class DiscoveryUtils {
     }
 
 
-    //发现设备有漏掉
     //根据ip段搜索设备 超时关闭搜索
+    public List<Object> convertToIP(List<String> list) {
+         List<Object> res = new ArrayList<Object>();//返回信息，第一个为onvif url，第二个为ip
+        for(String datas: list) {
+            String[] ip = xml(datas);
+            asyncService.addSearchIP(ip);
+//                        System.out.println(ip[0]);
+            if(ip[0].length() > 0 && ip[1].length() > 0) {
+                res.add(ip);
+            }
+        }
+        return res;
+    }
     public List<Object> discovery(InetAddress address, int second) {
-        List<Object> res = new ArrayList<Object>();//返回信息，第一个为onvif url，第二个为ip
+
+        List<String> recvData = new ArrayList<String>();
 
         final String uuid = UUID.randomUUID().toString();
         final String probe =
@@ -77,9 +89,14 @@ public class DiscoveryUtils {
                         "<wsa:MessageID>urn:uuid:.*</wsa:MessageID>",
                         "<wsa:MessageID>urn:uuid:" + uuid + "</wsa:MessageID>");
         final int port = random.nextInt(20000) + 40000;
-        DatagramSocket server = null;
+//        DatagramSocket server = null;
+        MulticastSocket server = null;
         try {
-            server = new DatagramSocket(port, address);
+            SocketAddress socketAddress = new InetSocketAddress(address.getHostAddress(),port);
+
+            server = new MulticastSocket(socketAddress);//new DatagramSocket(port, address);
+            server.setBroadcast(true);
+//            server.setTTL((byte) 100);
             server.send(
                     new DatagramPacket(
                             probe.getBytes(StandardCharsets.UTF_8),
@@ -92,7 +109,8 @@ public class DiscoveryUtils {
             e.printStackTrace();
         }
 
-        DatagramSocket finalServer = server;
+        MulticastSocket finalServer = server;
+//        DatagramSocket finalServer = server;
         Callable<Integer> call2 = new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
@@ -100,14 +118,11 @@ public class DiscoveryUtils {
                     final DatagramPacket packet = new DatagramPacket(new byte[4096], 4096);
                     try {
                         finalServer.receive(packet);
+                        System.out.println("地址" + packet.getAddress());
                         byte[] datas = Arrays.copyOf(packet.getData(), packet.getLength());
-                        System.out.println(new String(datas));
-                        String[] ip = xml(new String(datas));
-                        asyncService.addSearchIP(ip);
-                        System.out.println(ip[0]);
-                        if(ip[0].length() > 0 && ip[1].length() > 0) {
-                            res.add(ip);
-                        }
+                        recvData.add(new String(datas));
+//                        System.out.println(new String(datas));
+
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -133,7 +148,8 @@ public class DiscoveryUtils {
             System.out.println("time out");
             task.cancel(true);
         } finally {
-            return res;
+            List<Object> objects = convertToIP(recvData);//返回信息，第一个为onvif url，第二个为ip
+            return objects;
         }
 //        while (true) {
 //            final DatagramPacket packet = new DatagramPacket(new byte[4096], 4096);

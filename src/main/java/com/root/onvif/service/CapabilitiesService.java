@@ -31,7 +31,7 @@ public class CapabilitiesService {
 
     private static String getHead(UsernameToken usernameToken) {
         return "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:tds=\"http://www.onvif.org/ver10/device/wsdl\" xmlns:tt=\"http://www.onvif.org/ver10/schema\">\n" +
+                "<soap:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:tds=\"http://www.onvif.org/ver10/device/wsdl\" xmlns:tt=\"http://www.onvif.org/ver10/schema\">\n" +
                 "  <s:Header>\n" +
                 "    <wsse:Security xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\" xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\">\n" +
                 "      <wsse:UsernameToken>\n" +
@@ -122,6 +122,23 @@ public class CapabilitiesService {
                 "</soap:Envelope>";
     }
 
+
+    //流地址
+    private static String getStreamUri(String profileToken) {
+        return "<soap:Body>\n" +
+                "    <GetStreamUri xmlns=\"http://www.onvif.org/ver10/media/wsdl\">\n" +
+                "      <StreamSetup>\n" +
+                "        <!-- Attribute Wild card could not be matched. Generated XML may not be valid. -->\n" +
+                "        <Stream xmlns=\"http://www.onvif.org/ver10/schema\">RTP-Unicast</Stream>\n" +
+                "        <Transport xmlns=\"http://www.onvif.org/ver10/schema\">\n" +
+                "          <Protocol>UDP</Protocol>\n" +
+                "        </Transport>\n" +
+                "      </StreamSetup>\n" +
+                "      <ProfileToken>" + profileToken + "</ProfileToken>\n" +
+                "    </GetStreamUri>\n" +
+                "  </soap:Body>\n" +
+                "</soap:Envelope>";
+    }
     //#region 云台
 
     /**
@@ -263,6 +280,17 @@ public class CapabilitiesService {
 
         String returnXmlContent = okHttpUtils.okHttp3XmlPost(onvifDeviceInfo.getMediaUrl(), getSnapshotUriXml(usernameToken,profileToken));
         return XMLUtils.parseSnapshotUri(returnXmlContent);
+    }
+
+    public static String getStreamUri(OnvifDeviceInfo onvifDeviceInfo,String profileToken) throws Exception {
+        UsernameToken usernameToken = EncryptUtils.generate(onvifDeviceInfo.getUsername(), onvifDeviceInfo.getPassword());
+
+        String head = getHead(usernameToken);
+        String body = getStreamUri(profileToken);
+
+        System.out.println(head + body);
+        String returnXmlContent = okHttpUtils.okHttp3XmlPost(onvifDeviceInfo.getMediaUrl(), head + body);
+        return XMLUtils.parseStreamUri(returnXmlContent);
     }
 
     //#region 云台

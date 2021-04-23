@@ -113,4 +113,13 @@ public class XMLUtils {
         return uri.getText();
     }
 
+    public static String parseStreamUri(String xmlContent) throws Exception {
+        Document document = DocumentHelper.parseText(xmlContent);
+        Element root = document.getRootElement();
+        Element element = root.element("Body");
+        element = element.element("GetStreamUriResponse");
+        element = element.element("MediaUri");
+        Element uri = element.element("Uri");
+        return uri.getText();
+    }
 }
