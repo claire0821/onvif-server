@@ -68,51 +68,51 @@ public class TbDev implements Serializable {
     }
 
     public String getMediaUrl() {
-        return mediaUrl;
+        return mediaUrl == null ? "" : mediaUrl;
     }
 
     public void setMediaUrl(String mediaUrl) {
-        this.mediaUrl = mediaUrl;
+        this.mediaUrl = mediaUrl == null ? "" : mediaUrl;
     }
 
     public String getImagingUrl() {
-        return imagingUrl;
+        return imagingUrl == null ? "" : imagingUrl;
     }
 
     public void setImagingUrl(String imagingUrl) {
-        this.imagingUrl = imagingUrl;
+        this.imagingUrl = imagingUrl == null ? "" : imagingUrl;
     }
 
     public String getEventsUrl() {
-        return eventsUrl;
+        return eventsUrl == null ? "" : eventsUrl;
     }
 
     public void setEventsUrl(String eventsUrl) {
-        this.eventsUrl = eventsUrl;
+        this.eventsUrl = eventsUrl == null ? "" : eventsUrl;
     }
 
     public String getDeviceUrl() {
-        return deviceUrl;
+        return deviceUrl == null ? "" : deviceUrl;
     }
 
     public void setDeviceUrl(String deviceUrl) {
-        this.deviceUrl = deviceUrl;
+        this.deviceUrl = deviceUrl == null ? "" : deviceUrl;
     }
 
     public String getPtzUrl() {
-        return ptzUrl;
+        return ptzUrl == null ? "" : ptzUrl;
     }
 
     public void setPtzUrl(String ptzUrl) {
-        this.ptzUrl = ptzUrl;
+        this.ptzUrl = ptzUrl == null ? "" : ptzUrl;
     }
 
     public String getAnalyticsUrl() {
-        return analyticsUrl;
+        return analyticsUrl == null ? "" : analyticsUrl;
     }
 
     public void setAnalyticsUrl(String analyticsUrl) {
-        this.analyticsUrl = analyticsUrl;
+        this.analyticsUrl = analyticsUrl  == null ? "" : analyticsUrl;
     }
 
     @Override
