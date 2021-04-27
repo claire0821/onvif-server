@@ -11,5 +11,4 @@ public class OnvifApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(OnvifApplication.class, args);
 	}
-
 }

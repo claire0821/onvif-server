@@ -56,4 +56,11 @@ public class ResultUtil implements Serializable {
         json.put("msg",resultCode.getMessage());
         return json;
     }
+
+    public static JSONObject error(String msg) {
+        JSONObject json = new JSONObject();
+        json.put("code",ResultCode.ERROR.getCode());
+        json.put("msg",msg);
+        return json;
+    }
 }

@@ -10,6 +10,7 @@ import com.root.onvif.thread.AsyncService;
 import com.root.onvif.util.DiscoveryUtils;
 import com.root.onvif.util.ResultCode;
 import com.root.onvif.util.ResultUtil;
+import org.apache.catalina.util.RequestUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -115,6 +116,19 @@ public class DiscoveryController {
             e.printStackTrace();
         }
         return ResultUtil.success(onvifDeviceInfo);
+    }
+
+    @RequestMapping(value = "/getDevList", method = RequestMethod.GET)
+    public JSONObject getDevList() {
+        List<TbDev> tbDevs = devService.listAll();
+        if(tbDevs == null) {
+            return ResultUtil.error("加载设备列表出错");
+        }
+        if(tbDevs.size() == 0) {
+            return ResultUtil.error("设备列表为空");
+        }
+
+        return ResultUtil.success(tbDevs);
     }
     //#endregion
     //#region 本地ip段
