@@ -76,11 +76,14 @@ public class DiscoveryController {
     }
     //#endregion
 
+
     //#region 设备管理
     @RequestMapping(value = "addDev",method = RequestMethod.GET)
     public JSONObject addDev(@RequestParam(value = "address",required = true) String address,
                              @RequestParam(value = "username",required = false,defaultValue = "") String username,
-                             @RequestParam(value = "password",required = false,defaultValue = "") String password) {
+                             @RequestParam(value = "password",required = false,defaultValue = "") String password,
+                             @RequestParam(value = "ip",required = false) String ip,
+                             @RequestParam(value = "port",required = false) Integer port) {
 
         if(address.length() <= 0) {
             return ResultUtil.error();
@@ -93,16 +96,18 @@ public class DiscoveryController {
         OnvifDeviceInfo onvifDeviceInfo = new OnvifDeviceInfo();
         String str = split[2];
         int startIndex = str.indexOf(":");
+        if(ip == null) ip = "";
+        if(port == null) port = 80;
         if(startIndex != -1) {
-            String ip = str.substring(0,startIndex);
-            String port = str.substring(startIndex + 1,str.length());
-            int iPort = Integer.parseInt(port);
+            ip = str.substring(0,startIndex);
+            String strPort = str.substring(startIndex + 1,str.length());
+            port = Integer.parseInt(strPort);
 
             onvifDeviceInfo.setIp(ip);
-            onvifDeviceInfo.setPort(iPort);
+            onvifDeviceInfo.setPort(port);
         } else {
             onvifDeviceInfo.setIp(str);
-            onvifDeviceInfo.setPort(80);
+            onvifDeviceInfo.setPort(port);
         }
 
         onvifDeviceInfo.setOnvifAddress(address);
@@ -179,6 +184,7 @@ public class DiscoveryController {
         if(discovery.size() <= 0) {
             return ResultUtil.error(ResultCode.NO_DEVICE_FOUND);
         }
+        JSONArray jsonArray = new JSONArray();
         for(Object object : discovery) {
             String url = ((String[])object)[0];
             String ip = ((String[])object)[1];
@@ -193,15 +199,21 @@ public class DiscoveryController {
                 strIP = ip;
                 port = 80;
             }
-            OnvifDeviceInfo onvifDeviceInfo = new OnvifDeviceInfo();
-            onvifDeviceInfo.setIp(strIP);
-            onvifDeviceInfo.setPort(port);
-            onvifDeviceInfo.setOnvifAddress(url);
-            if(deviceInfoList.get(ip) == null) {
-                deviceInfoList.put(strIP,onvifDeviceInfo);
-            }
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("ip",strIP);
+            jsonObject.put("port", port);
+            jsonObject.put("onvifAddress",url);
+            jsonArray.add(jsonObject);
+
+//            OnvifDeviceInfo onvifDeviceInfo = new OnvifDeviceInfo();
+//            onvifDeviceInfo.setIp(strIP);
+//            onvifDeviceInfo.setPort(port);
+//            onvifDeviceInfo.setOnvifAddress(url);
+//            if(deviceInfoList.get(ip) == null) {
+//                deviceInfoList.put(strIP,onvifDeviceInfo);
+//            }
         }
-        return ResultUtil.success(discovery);
+        return ResultUtil.success(jsonArray);
     }
     //#endregion
 
