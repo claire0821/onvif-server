@@ -1,5 +1,7 @@
 package com.root.onvif.service;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.root.onvif.model.OnvifDeviceInfo;
 import com.root.onvif.model.UsernameToken;
 import com.root.onvif.util.EncryptUtils;
@@ -273,6 +275,14 @@ public class CapabilitiesService {
         String returnXmlContent = okHttpUtils.okHttp3XmlPost(onvifDeviceInfo.getMediaUrl(), getMediaProfilesXml(usernameToken));
         System.out.println(returnXmlContent);
         return XMLUtils.parseMediaProfiles(returnXmlContent);
+    }
+
+    public static JSONObject getMediaInfo(OnvifDeviceInfo onvifDeviceInfo, String profile) throws Exception {
+        UsernameToken usernameToken = EncryptUtils.generate(onvifDeviceInfo.getUsername(), onvifDeviceInfo.getPassword());
+
+        String returnXmlContent = okHttpUtils.okHttp3XmlPost(onvifDeviceInfo.getMediaUrl(), getMediaProfilesXml(usernameToken));
+        System.out.println(returnXmlContent);
+        return XMLUtils.parseMediaInfo(returnXmlContent, profile);
     }
 
     public static String getSnapshotUri(OnvifDeviceInfo onvifDeviceInfo,String profileToken) throws Exception {

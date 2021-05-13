@@ -273,9 +273,9 @@ public class DiscoveryController {
     //#region media
     @RequestMapping(value = "/getMediaProfiles",method = RequestMethod.GET)
     public JSONObject getMediaProfiles(@RequestParam(value = "ip",required = true) String ip,
-                                        @RequestParam(value = "port",required = false,defaultValue = "80") int port,
-                                        @RequestParam(value = "username",required = false) String username,
-                                        @RequestParam(value = "password", required = false) String password) {
+                                       @RequestParam(value = "port",required = false,defaultValue = "80") int port,
+                                       @RequestParam(value = "username",required = false) String username,
+                                       @RequestParam(value = "password", required = false) String password) {
 
         OnvifDeviceInfo onvifDeviceInfo = getDevInfoFromList(ip, port, username, password);
         try {
@@ -300,6 +300,20 @@ public class DiscoveryController {
         return ResultUtil.error();
     }
 
+    @RequestMapping(value = "/getMediaInfo", method = RequestMethod.GET)
+    public JSONObject getMediaInfo(@RequestParam(value = "ip",required = true) String ip,
+                                   @RequestParam(value = "profile", required = true) String profile) {
+        OnvifDeviceInfo onvifDeviceInfo = deviceInfoList.get(ip);
+        if(onvifDeviceInfo != null) {
+            try {
+                JSONObject mediaInfo = CapabilitiesService.getMediaInfo(onvifDeviceInfo, profile);
+                return ResultUtil.success(mediaInfo);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return ResultUtil.error();
+    }
 
     @RequestMapping(value = "/getSnapshotUri", method = RequestMethod.GET)
     public JSONObject getSnapshotUri(@RequestParam(value = "ip",required = true) String ip) {

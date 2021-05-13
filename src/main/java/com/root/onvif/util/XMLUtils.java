@@ -1,5 +1,7 @@
 package com.root.onvif.util;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.root.onvif.model.OnvifDeviceInfo;
 import org.dom4j.Attribute;
 import org.dom4j.Document;
@@ -103,6 +105,128 @@ public class XMLUtils {
         return res;
     }
 
+    public static JSONObject parseMediaInfo(String xmlContent, String strProfile) throws Exception {
+        Map<String,String> res = new HashMap<String, String>();
+        Document document = DocumentHelper.parseText(xmlContent);
+        Element root = document.getRootElement();
+        List<Element> elements = root.element("Body").element("GetProfilesResponse").elements("Profiles");
+
+        JSONArray jsonArray = new JSONArray();
+
+        for(Element item : elements) {
+//            System.out.println(item.toString());
+            JSONObject profile = new JSONObject();
+
+            Attribute token = item.attribute("token");
+            if(token != null && token.getValue().equals(strProfile)) {
+                Element name = item.element("Name");
+                profile.put("token", token.getValue());
+                profile.put("name", name.getText());
+
+                //VideoSource
+                Element videoSourceConfiguration = item.element("VideoSourceConfiguration");
+                profile.put("VideoSource",getVideoSource(videoSourceConfiguration));
+                Element audioSourceConfiguration = item.element("AudioSourceConfiguration");
+                profile.put("AudioSource",getAudioSource(audioSourceConfiguration));
+                Element audioEncoderConfiguration = item.element("AudioEncoderConfiguration");
+                profile.put("AudioEncoder",getAudioEncoder(audioEncoderConfiguration));
+                return profile;
+//                jsonArray.add(profile);
+            }
+
+        }
+
+        return null;
+    }
+
+    public static JSONObject getVideoSource(Element videoSourceConfiguration) {
+        if(videoSourceConfiguration == null) return null;
+        JSONObject videoSource = new JSONObject();
+        Attribute token = videoSourceConfiguration.attribute("token");
+        videoSource.put("token", token.getValue());
+        Element name = videoSourceConfiguration.element("Name");
+        videoSource.put("Name", name.getText());
+        Element useCount = videoSourceConfiguration.element("UseCount");
+        videoSource.put("UseCount", useCount.getText());
+        Element sourceToken = videoSourceConfiguration.element("SourceToken");
+        videoSource.put("SourceToken", sourceToken.getText());
+
+        Element bounds = videoSourceConfiguration.element("Bounds");
+        JSONObject boundsJson = new JSONObject();
+        Attribute x = bounds.attribute("x");
+        boundsJson.put("x",x.getValue());
+        Attribute y = bounds.attribute("y");
+        boundsJson.put("y",y.getValue());
+        Attribute width = bounds.attribute("width");
+        boundsJson.put("width",width.getValue());
+        Attribute height = bounds.attribute("height");
+        boundsJson.put("height",height.getValue());
+        videoSource.put("Bounds", boundsJson);
+        return videoSource;
+    }
+
+    public static JSONObject getAudioSource(Element audioSourceConfiguration) {
+        if(audioSourceConfiguration == null) return null;
+        JSONObject audioSource = new JSONObject();
+        Attribute token = audioSourceConfiguration.attribute("token");
+        audioSource.put("token",token.getValue());
+        Element name = audioSourceConfiguration.element("Name");
+        audioSource.put("Name", name.getText());
+        Element useCount = audioSourceConfiguration.element("UseCount");
+        audioSource.put("UseCount", useCount.getText());
+        Element sourceToken = audioSourceConfiguration.element("SourceToken");
+        audioSource.put("SourceToken", sourceToken.getText());
+        return audioSource;
+
+    }
+
+    public static JSONObject getAudioEncoder(Element audioEncoderConfiguration) {
+        if(audioEncoderConfiguration == null) return null;
+        JSONObject audioEncoder = new JSONObject();
+        Attribute token = audioEncoderConfiguration.attribute("token");
+        audioEncoder.put("token",token.getValue());
+
+        Element name = audioEncoderConfiguration.element("Name");
+        audioEncoder.put("Name",name.getText());
+
+        Element useCount = audioEncoderConfiguration.element("UseCount");
+        audioEncoder.put("UseCount",useCount.getText());
+
+        Element encoding = audioEncoderConfiguration.element("Encoding");
+        audioEncoder.put("Encoding",encoding.getText());
+
+        Element bitrate = audioEncoderConfiguration.element("Bitrate");
+        audioEncoder.put("Bitrate",bitrate.getText());
+
+        Element sampleRate = audioEncoderConfiguration.element("SampleRate");
+        audioEncoder.put("SampleRate",sampleRate.getText());
+
+        Element multicast = audioEncoderConfiguration.element("Multicast");
+        JSONObject multicastJson = new JSONObject();
+        Element address = multicast.element("Address");
+        JSONObject addressJson = new JSONObject();
+        Element type = address.element("Type");
+        addressJson.put("Type",type.getText());
+        Element iPv4Address = address.element("IPv4Address");
+        addressJson.put("IPv4Address",iPv4Address.getText());
+        multicastJson.put("Address",addressJson);
+
+        Element port = multicast.element("Port");
+        multicastJson.put("Port",port.getText());
+
+        Element tTL = multicast.element("TTL");
+        multicastJson.put("TTL",tTL.getText());
+
+        Element autoStart = multicast.element("AutoStart");
+        multicastJson.put("AutoStart",autoStart.getText());
+
+        audioEncoder.put("Multicast",multicastJson);
+
+        Element sessionTimeout = audioEncoderConfiguration.element("SessionTimeout");
+        audioEncoder.put("SessionTimeout",sessionTimeout.getText());
+
+        return audioEncoder;
+    }
     public static String parseSnapshotUri(String xmlContent) throws Exception {
         Document document = DocumentHelper.parseText(xmlContent);
         Element root = document.getRootElement();
