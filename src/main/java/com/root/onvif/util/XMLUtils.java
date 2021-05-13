@@ -3,10 +3,7 @@ package com.root.onvif.util;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.root.onvif.model.OnvifDeviceInfo;
-import org.dom4j.Attribute;
-import org.dom4j.Document;
-import org.dom4j.DocumentHelper;
-import org.dom4j.Element;
+import org.dom4j.*;
 
 import java.util.*;
 
@@ -245,5 +242,136 @@ public class XMLUtils {
         element = element.element("MediaUri");
         Element uri = element.element("Uri");
         return uri.getText();
+    }
+
+    //#region 云台
+    public static JSONObject parsePTZConfiguration(String xmlContent, String strProfile) throws DocumentException {
+        Document document = DocumentHelper.parseText(xmlContent);
+        Element root = document.getRootElement();
+        List<Element> elements = root.element("Body").element("GetProfilesResponse").elements("Profiles");
+
+        for(Element item : elements) {
+            Attribute token = item.attribute("token");
+            if(token != null && token.getValue().equals(strProfile)) {
+                //PTZConfiguration
+                Element ptzConfiguration = item.element("PTZConfiguration");
+                if(ptzConfiguration == null) {
+                    return null;
+                }
+                JSONObject ptzConfig = parse(ptzConfiguration);//new JSONObject();
+
+                /*
+                Attribute token1 = ptzConfiguration.attribute("token");
+                ptzConfig.put("token",token1.getValue());
+                Element name = ptzConfiguration.element("Name");
+                ptzConfig.put("Name",name.getText());
+
+                Element useCount = ptzConfiguration.element("UseCount");
+                ptzConfig.put("UseCount",useCount.getText());
+
+                Element nodeToken = ptzConfiguration.element("NodeToken");
+                ptzConfig.put("NodeToken",useCount.getText());
+
+                Element defaultAbsolutePantTiltPositionSpace = ptzConfiguration.element("DefaultAbsolutePantTiltPositionSpace");
+                ptzConfig.put("DefaultAbsolutePantTiltPositionSpace",defaultAbsolutePantTiltPositionSpace.getText());
+
+                Element defaultAbsoluteZoomPositionSpace = ptzConfiguration.element("DefaultAbsoluteZoomPositionSpace");
+                ptzConfig.put("DefaultAbsoluteZoomPositionSpace",defaultAbsoluteZoomPositionSpace.getText());
+
+                Element defaultRelativePanTiltTranslationSpace = ptzConfiguration.element("DefaultRelativePanTiltTranslationSpace");
+                ptzConfig.put("DefaultRelativePanTiltTranslationSpace",defaultRelativePanTiltTranslationSpace.getText());
+
+                Element defaultRelativeZoomTranslationSpace = ptzConfiguration.element("DefaultRelativeZoomTranslationSpace");
+                ptzConfig.put("DefaultRelativeZoomTranslationSpace",defaultRelativeZoomTranslationSpace.getText());
+
+                Element defaultContinuousPanTiltVelocitySpace = ptzConfiguration.element("DefaultContinuousPanTiltVelocitySpace");
+                ptzConfig.put("DefaultContinuousPanTiltVelocitySpace",defaultContinuousPanTiltVelocitySpace.getText());
+
+                Element defaultContinuousZoomVelocitySpace = ptzConfiguration.element("DefaultContinuousZoomVelocitySpace");
+                ptzConfig.put("DefaultContinuousZoomVelocitySpace",defaultContinuousZoomVelocitySpace.getText());
+
+                Element defaultPTZSpeed = ptzConfiguration.element("DefaultPTZSpeed");
+                JSONObject defaultPTZSpeedJson = new JSONObject();
+                Element panTilt = defaultPTZSpeed.element("PanTilt");
+                JSONObject panTiltJson = new JSONObject();
+
+                Attribute x = panTilt.attribute("x");
+                panTiltJson.put("x", x.getValue());
+
+                Attribute y = panTilt.attribute("y");
+                panTiltJson.put("y", y.getValue());
+                defaultPTZSpeedJson.put("Attribute",panTiltJson);
+
+                Element zoom = defaultPTZSpeed.element("Zoom");
+                JSONObject zoomJson = new JSONObject();
+//                zoom.attribute()
+*/
+                return ptzConfig;
+            }
+
+        }
+
+        return null;
+    }
+    //#endregion
+
+    //xml转json
+    public static JSONObject parse(Element element) {
+        if(element == null) return null;
+        JSONObject jsonObject = new JSONObject();
+
+        List<Attribute> attributes = element.attributes();
+        for(Attribute item : attributes) {
+            jsonObject.put(item.getName(),item.getValue());
+        }
+
+        if(element.getName().equals("Min")) {
+            System.out.println(element.toString());
+        }
+        List<Element> elements = element.elements();
+        //没有子节点并且有text
+        if(elements == null || elements.size() == 0) {
+//            System.out.println(element.getName() + ":" + element.getText());
+            if(element.getText().length() > 0) {
+                jsonObject.put(element.getName(),element.getText());
+            }
+            return jsonObject;
+        }
+
+        JSONObject itemJson = new JSONObject();
+        for(Element item : elements) {
+//            if(item.getName().equals("PanTiltLimits")) {
+//                System.out.println(item);
+//            }
+            List<Element> elements1 = item.elements();
+            if(elements1 == null || elements1.size() == 0) {
+                if(item.getText().length() > 0) {
+//                    System.out.println(item.getName());
+                    itemJson.put(item.getName(),item.getText());
+                }
+            } else {
+                JSONObject item1Json = new JSONObject();
+                for (Element item1 : elements1) {
+                    JSONObject parse = parse(item1);
+//                    System.out.println(parse);
+
+
+                    if(item1.nodeCount() == 1 || item1.attributes().size() == 0) {
+                        System.out.println(item1.getName() + ":" + item1.nodeCount());
+                        item1Json.putAll(parse);
+                    } else {
+                        item1Json.put(item1.getName(),parse);
+                    }
+                }
+
+                itemJson.put(item.getName(),item1Json);
+            }
+
+//            System.out.println(itemJson);
+//            jsonObject.put(item.getName(),parse);
+        }
+        jsonObject.put(element.getName(),itemJson);
+
+        return jsonObject;
     }
 }

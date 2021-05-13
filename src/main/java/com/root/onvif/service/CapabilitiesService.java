@@ -314,5 +314,13 @@ public class CapabilitiesService {
         String returnXmlContent = okHttpUtils.okHttp3XmlPost(onvifDeviceInfo.getPtzUrl(), head + body);
         System.out.println(returnXmlContent);
     }
+
+    public static JSONObject getPTZInfo(OnvifDeviceInfo onvifDeviceInfo, String profile) throws Exception {
+        UsernameToken usernameToken = EncryptUtils.generate(onvifDeviceInfo.getUsername(), onvifDeviceInfo.getPassword());
+
+        String returnXmlContent = okHttpUtils.okHttp3XmlPost(onvifDeviceInfo.getMediaUrl(), getMediaProfilesXml(usernameToken));
+//        System.out.println(returnXmlContent);
+        return XMLUtils.parsePTZConfiguration(returnXmlContent, profile);
+    }
     //#endregion
 }

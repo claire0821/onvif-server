@@ -389,6 +389,22 @@ public class DiscoveryController {
         }
         return ResultUtil.success();
     }
+    @RequestMapping(value = "/getPTZConfig", method = RequestMethod.GET)
+    public JSONObject getPTZConfig(@RequestParam(value = "ip",required = true) String ip,
+                                   @RequestParam(value = "profile", required = true) String profile) {
+        OnvifDeviceInfo onvifDeviceInfo = deviceInfoList.get(ip);
+        if(onvifDeviceInfo == null) {
+            return ResultUtil.error();
+        }
+
+        try {
+            JSONObject ptzInfo = CapabilitiesService.getPTZInfo(onvifDeviceInfo, profile);
+            return ResultUtil.success(ptzInfo);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResultUtil.success();
+    }
     //#endregion
     /**
      * 从设备列表查找设备，没有则创建
