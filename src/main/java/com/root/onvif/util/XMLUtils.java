@@ -325,9 +325,6 @@ public class XMLUtils {
             jsonObject.put(item.getName(),item.getValue());
         }
 
-        if(element.getName().equals("Min")) {
-            System.out.println(element.toString());
-        }
         List<Element> elements = element.elements();
         //没有子节点并且有text
         if(elements == null || elements.size() == 0) {

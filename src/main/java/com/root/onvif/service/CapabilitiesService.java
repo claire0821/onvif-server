@@ -45,6 +45,20 @@ public class CapabilitiesService {
                 "    </wsse:Security>\n" +
                 "  </s:Header>\n";
     }
+    private static String getHead1(UsernameToken usernameToken) {
+        return "<?xml version=\"1.0\"?>\n" +
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\">\n" +
+                "    <s:Header>\n" +
+                "        <Security s:mustUnderstand=\"1\" xmlns=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">\n" +
+                "            <UsernameToken>\n" +
+                "                <Username>"+ usernameToken.getUsername() + "</Username>\n" +
+                "                <Password Type=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest\">" + usernameToken.getPassword() + "</Password>\n" +
+                "                <Nonce EncodingType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary\">" + usernameToken.getNonce() + "</Nonce>\n" +
+                "                <Created xmlns=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\">" + usernameToken.getCreated() + "</Created>\n" +
+                "            </UsernameToken>\n" +
+                "        </Security>\n" +
+                "    </s:Header>";
+    }
 
     private static String getHead() {
         return "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
@@ -307,7 +321,7 @@ public class CapabilitiesService {
     public static void continuousMove(OnvifDeviceInfo onvifDeviceInfo,int command, String profileToken, float speed) throws Exception {
         UsernameToken usernameToken = EncryptUtils.generate(onvifDeviceInfo.getUsername(), onvifDeviceInfo.getPassword());
 
-        String head = getHead(usernameToken);
+        String head = getHead1(usernameToken);
         String body = getContinuousMoveXml(command, profileToken, speed);
 
         System.out.println(head + body);
