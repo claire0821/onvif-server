@@ -22,8 +22,8 @@ import java.util.Date;
 import java.util.Map;
 
 
-@Aspect //注解 使之成为切面类
-@Component //注解 把切面类加入到IOC容器中
+//@Aspect //注解 使之成为切面类
+//@Component //注解 把切面类加入到IOC容器中
 
 //@Aspect：用于定义切面
 //@Before：通知方法会在目标方法调用之前执行
