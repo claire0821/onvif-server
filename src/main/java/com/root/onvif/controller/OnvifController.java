@@ -10,27 +10,22 @@ import com.root.onvif.thread.AsyncService;
 import com.root.onvif.util.DiscoveryUtils;
 import com.root.onvif.util.ResultCode;
 import com.root.onvif.util.ResultUtil;
-import org.apache.catalina.util.RequestUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.PostConstruct;
-import javax.sound.sampled.Port;
 import java.io.IOException;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 import java.util.*;
-import java.util.zip.DeflaterOutputStream;
 
 @RestController
 @RequestMapping("/onvif")
 @CrossOrigin
-public class DiscoveryController {
+public class OnvifController {
 
-    private static final Logger logger = LoggerFactory.getLogger(DiscoveryController.class);
+    private static final Logger logger = LoggerFactory.getLogger(OnvifController.class);
 
     public static LinkedHashMap<String,OnvifDeviceInfo> deviceInfoList;//存放onvif设备信息
     @Autowired

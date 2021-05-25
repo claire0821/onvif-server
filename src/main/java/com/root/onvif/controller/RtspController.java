@@ -1,6 +1,7 @@
 package com.root.onvif.controller;
 
 import com.root.onvif.model.ResponseInfo;
+import com.root.onvif.netty.Server;
 import com.root.onvif.rtsp.RtspConverter;
 import com.root.onvif.rtsp.RtspState;
 import com.root.onvif.service.RtspService;
@@ -30,17 +31,21 @@ public class RtspController {
     @Autowired
     AsyncService asyncService;
 
+
     @PostConstruct
     public void init() {
 //        asyncService.sendFlv();
         loadFFmpeg();
+        asyncService.startServer(9998);
+        asyncService.send();
+        asyncService.clearClient(1000 * 60 * 5, 1000 * 60 * 1);
     }
     public void loadFFmpeg() {
         try {
-            logger.info("正在初始化ffmpeg资源，请稍等...");
+            logger.info("ffmpeg正在初始化资源，请稍等...");
             FFmpegFrameGrabber.tryLoad();
             FFmpegFrameRecorder.tryLoad();
-            logger.info("初始化ffmpeg成功");
+            logger.info("ffmpeg初始化成功");
         } catch (org.bytedeco.javacv.FrameGrabber.Exception e) {
             e.printStackTrace();
         } catch (org.bytedeco.javacv.FrameRecorder.Exception e) {
@@ -92,12 +97,12 @@ public class RtspController {
         }
 
         while (rtspConverter.getRtspState() != RtspState.CLOSE) {
-            Thread.sleep(2000);
+            Thread.sleep(6000);
         }
 //        send1(rtspConverter,httpServletResponse);
 //        asyncService.send(url,httpServletResponse);
         System.out.println("退出");
-        AsyncServiceImpl.responseInfos.remove(key);
+//        AsyncServiceImpl.responseInfos.remove(key);
 
     }
 

@@ -1,5 +1,7 @@
 package com.root.onvif.rtsp;
 
+import com.root.onvif.model.StreamInfo;
+import com.root.onvif.thread.AsyncServiceImpl;
 import org.bytedeco.ffmpeg.avcodec.AVCodec;
 import org.bytedeco.ffmpeg.avcodec.AVCodecContext;
 import org.bytedeco.ffmpeg.avcodec.AVCodecParameters;
@@ -32,6 +34,7 @@ import static org.bytedeco.ffmpeg.global.avutil.av_frame_alloc;
 
 public class RtspConverter extends Thread{
     private static final Logger logger = LoggerFactory.getLogger(RtspConverter.class);
+    public volatile boolean exit = false;//没有拉流关闭流
 
     //流地址
     public String url;
@@ -53,7 +56,7 @@ public class RtspConverter extends Thread{
 
     private RtspState rtspState;
 
-    private boolean close;
+
 
     public RtspState getRtspState() {
         return rtspState;
@@ -67,7 +70,7 @@ public class RtspConverter extends Thread{
         this.url = url;
         this.updateTime = System.currentTimeMillis();
 //        avformat_network_init();
-        close = false;
+        exit = false;
         avutil.av_log_set_level(AV_LOG_WARNING);
         FFmpegLogCallback.set();
         this.rtspState = RtspState.INITIAL;
@@ -151,15 +154,16 @@ public class RtspConverter extends Thread{
                 //提供输出流封装格式
                 recorder.setFormat("flv");
                 // 视频帧率(保证视频质量的情况下最低25，低于25会出现闪屏
-                recorder.setFrameRate(50);// 设置帧率
+                recorder.setFrameRate(25);// 设置帧率
                 // 关键帧间隔，一般与帧率相同或者是视频帧率的两倍
-                recorder.setGopSize(50 * 2);// 设置gop
+                recorder.setGopSize(5);// 设置gop
 //		recorder.setVideoBitrate(500 * 1000);// 码率500kb/s
                 recorder.setVideoCodecName("libx264");
 //		recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
                 recorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
 //		recorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
                 recorder.setAudioCodecName("aac");
+                recorder.setVideoOption("preset", "ultrafast");
                 recorder.setAudioChannels(grabber.getAudioChannels());
             } else {
                 recorder.setFormat("flv");
@@ -183,6 +187,7 @@ public class RtspConverter extends Thread{
             //设置头信息
             this.headers = stream.toByteArray();
             stream.reset();
+
             res = true;
         } catch (FrameRecorder.Exception e) {
             System.out.println(e.toString());
@@ -197,19 +202,22 @@ public class RtspConverter extends Thread{
         if(!createGrabber()) {
             this.rtspState = RtspState.CLOSE;
             logger.error("open stream failed " + this.url);
+            add();
             return;
         }
         logger.info("open stream success " + this.url);
         if(!createRecorder()) {
             this.rtspState = RtspState.CLOSE;
             logger.error("open record failed " + this.url);
+            add();
             return;
         }
         logger.info("open record success " + this.url);
         this.rtspState = RtspState.OPEN;
 
+        add();
 
-        while (true) {
+        while (!exit) {
             //FFmpeg读流压缩
             AVPacket k = null;
             Frame frame = null;
@@ -228,8 +236,10 @@ public class RtspConverter extends Thread{
 
                 if(stream.size() > 0) {
                     setOutData(stream.toByteArray());
+//                    System.out.println("out");
                     stream.reset();
                     setRtspState(RtspState.RUN);
+                    add();
                 }
             } catch (FrameGrabber.Exception e) {
                 e.printStackTrace();
@@ -240,19 +250,32 @@ public class RtspConverter extends Thread{
             }
         }
 
-//        try {
-//            grabber.close();
-//            recorder.close();
-//            stream.close();
-//        } catch (FrameGrabber.Exception e) {
-//            e.printStackTrace();
-//        } catch (FrameRecorder.Exception e) {
-//            e.printStackTrace();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        } finally {
-//            this.rtspState = RtspState.CLOSE;
-//        }
+        try {
+            if(grabber != null) grabber.close();
+            if(recorder != null) recorder.close();
+            if(stream != null) stream.close();
+        } catch (FrameGrabber.Exception e) {
+            e.printStackTrace();
+        } catch (FrameRecorder.Exception e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            this.rtspState = RtspState.CLOSE;
+            logger.info("拉流结束" + this.url);
+        }
+    }
+
+    public void add() {
+        if(AsyncServiceImpl.listStream.size() > AsyncServiceImpl.listRtsp.size() * 5) {
+            AsyncServiceImpl.listStream.clear();
+        }
+        StreamInfo streamInfo = new StreamInfo();
+        streamInfo.setState(this.rtspState);
+        streamInfo.setUrl(this.url);
+        streamInfo.setHeaders(this.headers);
+        streamInfo.setOutData(this.outData);
+        AsyncServiceImpl.listStream.add(streamInfo);
     }
     @Override
     public void run() {
